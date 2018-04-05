@@ -1,4 +1,7 @@
 # INF8225-project
+
+# Authors : BEISEL Julien, BUIREL Pierre, DISSLER Nina, SPRINGUEL Eric
+
 Project made during the INF8225 Machine Learning class 
 
 We're trying to use transfer learning techniques in order to use pretrained models or to train our own models from scratch and re-use mose of the parameters.
