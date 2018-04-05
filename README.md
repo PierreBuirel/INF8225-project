@@ -1,6 +1,6 @@
 # INF8225-project
 
-# Authors : BEISEL Julien, BUIREL Pierre, DISSLER Nina, SPRINGUEL Eric
+Authors : BEISEL Julien, BUIREL Pierre, DISSLER Nina, SPRINGUEL Eric
 
 Project made during the INF8225 Machine Learning class 
 
