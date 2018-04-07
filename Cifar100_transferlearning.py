@@ -4,24 +4,59 @@ import torch
 from torch.autograd import Variable
 import torchvision
 import torch.nn.functional as F
-
-
 import torchvision.transforms as transforms
 from torch import nn
 from torch import optim
+import torch.utils.data as data_utils
 
+# train_data = torchvision.datasets.CIFAR100('../data', train=True, download=True, transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))]))
+# test_data = torchvision.datasets.CIFAR100('../data', train=False, download=True, transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))]))
+#
+# chosen_labels=np.array([40,41,42,43,44,55,56,57,58,59,60,61,62,63,64,75,76,77,78,79,80,81,82,83,84,90,91,92,93,94,95,96,97,98,99])
+#
+# dataset=train_data
+# dim_train=0
+# labels_train = [dataset[0][1]]
+# images_train = [dataset[0][0].numpy()]
+# for indice_batch, data_temp in enumerate(dataset):
+#     print(indice_batch)
+#     if (data_temp[1] in chosen_labels):
+#         labels_train = np.append(labels_train,data_temp[1])
+#         images_train = np.append(images_train,[data_temp[0].numpy()],axis=0)
+#         dim_train=dim_train+1
+# np.save('images_train.npy', images_train)
+# np.save('labels_train.npy', labels_train)
+#
+# dataset=test_data
+# dim_test=0
+# labels_test = [dataset[0][1]]
+# images_test = [dataset[0][0].numpy()]
+# for indice_batch, data_temp in enumerate(dataset):
+#     print(indice_batch)
+#     if (data_temp[1] in chosen_labels):
+#         labels_test = np.append(labels_test,data_temp[1])
+#         images_test = np.append(images_test,[data_temp[0].numpy()],axis=0)
+#         dim_test=dim_test+1
+# np.save('images_test.npy', images_test)
+# np.save('labels_test.npy', labels_test)
 
-train_data = torchvision.datasets.CIFAR100('../data', train=True, download=True, transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))]))
+images_train = np.load('images_train.npy')
+labels_train = np.load('labels_train.npy')
+labels_train = torch.from_numpy(labels_train)
+images_train = torch.from_numpy(images_train)
+customdataset_train=data_utils.TensorDataset(images_train,labels_train)
 
-test_data = torchvision.datasets.CIFAR100('../data', train=False, download=True, transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))]))
+images_test = np.load('images_test.npy')
+labels_test = np.load('labels_test.npy')
+labels_test = torch.from_numpy(labels_test)
+images_test = torch.from_numpy(images_test)
+customdataset_test=data_utils.TensorDataset(images_test,labels_test)
 
 batch_size = 100
 test_batch_size = 100
 
-train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
-
-test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size, shuffle=True)
-
+train_loader = torch.utils.data.DataLoader(customdataset_train, batch_size=batch_size, shuffle=True)
+test_loader = torch.utils.data.DataLoader(customdataset_test, batch_size=batch_size, shuffle=True)
 
 losses = []
 accuracies = []
@@ -86,7 +121,17 @@ model.load_state_dict(torch.load('mytraining.pt'))
 model.fc = nn.Linear(256*4*4, 100)
 model.cuda()
 
-optimizer = optim.Adam(model.parameters(), lr=0.001,weight_decay=0.0005)
+# ct = 0
+# for child in model.children():
+#     model.children.__sizeof__()
+#     ct += 1
+#     if ct < 4:
+#         for param in child.parameters():
+#             param.requires_grad = False
+#             import pdb ; pdb.set_trace()
+
+
+optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.001,weight_decay=0.0005)
 loss_fn = nn.NLLLoss()
 
 def train(epoch):
@@ -108,8 +153,8 @@ def train(epoch):
         pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
         correct += pred.eq(target.data.view_as(pred)).cpu().sum()
 
-    train_loss /= 50000
-    print('\n' + 'Train' + ' set {}: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(epoch, train_loss, correct, 50000,100. * correct / 50000))
+    train_loss /= 17500
+    print('\n' + 'Train' + ' set {}: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(epoch, train_loss, correct, 17500, 100. * correct / 17500))
 
 
 def test(loader, name, epoch):
@@ -132,7 +177,7 @@ def test(loader, name, epoch):
     losses.append(test_loss)
     accuracies.append(100. * correct / len(loader.dataset))
 
-epochs = 10
+epochs = 100
 
 for epoch in range(1, epochs + 1):
     train(epoch)
@@ -153,14 +198,21 @@ ax1.set_ylabel("Loss", color='g')
 ax2.set_ylabel("Accuracy", color = 'b')
 plt.show()
 
+
+
 # References
-# http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=7486599 (Very Deep Convolutional Neural Network Based Image Classification Using Small Training Sample Size)
-# https://arxiv.org/pdf/1412.6806.pdf (Striving for simplicity : the all convolutional net)
 # http://rodrigob.github.io/are_we_there_yet/build/classification_datasets_results.html#43494641522d3130 (Classification des differentes performances sur cifar10)
 # http://cs231n.github.io/convolutional-networks/ (cours de Stanford sur les CNN)
-# https://arxiv.org/pdf/1411.1792.pdf (How  transferable  are  features  in  deep neural networks?)
 # https://machinelearningmastery.com/transfer-learning-for-deep-learning/ (A gentle introduction to transfer learning)
 # http://ruder.io/transfer-learning/
 
+#Articles
+# http://cs231n.stanford.edu/reports/2016/pdfs/001_Report.pdf
+# https://arxiv.org/pdf/1411.1792.pdf (How  transferable  are  features  in  deep neural networks?)
+# http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=7486599 (Batchnorm / Dropout)
+
+
 #torch.save(model.state_dict(), 'mytraining2.pt')
 #model.save_state_dict('mytraining.pt')
+
+#import pdb ; pdb.set_trace()
